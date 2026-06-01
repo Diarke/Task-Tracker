@@ -1,0 +1,41 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules/
+bower_components/
+
+# Build outputs
+dist/
+build/
+.npm/
+.yarn/
+.cache/
+
+# Environment & Secrets
+.env
+.env.*
+*.pem
+*.key
+*.cert
+
+# Logs
+*.log
+logs/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker
+docker-compose.override.yml
+
+# Tests & coverage
+coverage/
+.nyc_output/
+**/*.test.js
+**/*.spec.js
