@@ -6,6 +6,7 @@ import uvicorn
 
 from src.core.config import settings
 from src.db.session import check_db_connection
+from src.api.routers import main_router
 
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,9 @@ app = FastAPI(
     docs_url=settings.APP.DOCS_URL,
     redoc_url=settings.APP.REDOC_URL,
 )
+
+
+app.include_router(main_router)
 
 
 if __name__ == "__main__":
