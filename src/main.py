@@ -1,10 +1,27 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 import uvicorn
 
 from src.core.config import settings
+from src.db.session import check_db_connection
+
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await check_db_connection()
+    logger.info("Соединение с базой данных установлено")
+    yield
 
 
 app = FastAPI(
+    lifespan=lifespan,
     debug=settings.APP.DEBUG,
     title=settings.APP.TITLE,
     summary=settings.APP.SUMMARY,
