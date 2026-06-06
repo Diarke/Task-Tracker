@@ -1,5 +1,4 @@
 from functools import cached_property, lru_cache
-from dotenv import find_dotenv
 
 from typing import Annotated, Literal
 from pydantic import Field
@@ -8,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ModelConfig(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=find_dotenv(".env"),
+        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore"
     )
