@@ -35,11 +35,18 @@ class PostgresSettings(ModelConfig):
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 
+class JWTSettings(ModelConfig):
+    SECRET_KEY: Annotated[str, Field()]
+    ALGORITHM: Annotated[str, Field]
+    ACCESS_TOKEN_EXPIRE_MINUTES: Annotated[int, Field()]
+
+
 class Settings(ModelConfig):
     MODE: Literal["local", "dev", "prod", "test"] = "local"
 
     APP: AppSettings = AppSettings()
     POSTGRES: PostgresSettings = PostgresSettings()
+    JWT: JWTSettings = JWTSettings()
 
 
 @lru_cache
