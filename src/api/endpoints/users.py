@@ -1,6 +1,8 @@
 from fastapi import APIRouter, status
 
-from src.schemas.users import CreateUser
+from src.api.schemas.users import UserCreateRequest
+from src.api.dependencies.db import DBDep
+from src.services.users import UserService
 
 
 router = APIRouter()
@@ -11,9 +13,6 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="create user",
 )
-async def register(user: CreateUser):
-    return {
-        "message": "User created",
-        "user": user,
-    }
+async def register(user: UserCreateRequest, db: DBDep):
+    return await UserService(db).create_user(user)
 
