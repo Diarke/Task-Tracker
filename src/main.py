@@ -7,6 +7,7 @@ import uvicorn
 from src.core.config import settings
 from src.db.session import check_db_connection
 from src.api.routers import main_router
+from src.exceptions import register_exception_handlers
 
 
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +35,7 @@ app = FastAPI(
 
 
 app.include_router(main_router)
+register_exception_handlers(app)
 
 
 if __name__ == "__main__":

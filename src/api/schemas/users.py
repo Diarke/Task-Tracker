@@ -33,3 +33,9 @@ class User(BaseModel):
     hashed_password: Annotated[str, Field(description="Hashed user password")]
     created_at: Annotated[datetime, Field(description="Timestamp when the user was created")]
     updated_at: Annotated[datetime, Field(description="Timestamp when the user was last updated")]
+
+
+class UserCreateResponse(BaseModel):
+    access_token: str
+    token_type: str
+
