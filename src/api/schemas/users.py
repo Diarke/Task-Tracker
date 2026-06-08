@@ -10,7 +10,7 @@ from pydantic import (
 )
 
 
-class CreateUser(BaseModel):
+class UserCreateRequest(BaseModel):
     email: Annotated[EmailStr, Field(description="User email address")]
     password: Annotated[SecretStr, Field(description="User password")]
 
@@ -20,6 +20,11 @@ class CreateUser(BaseModel):
         if len(v.get_secret_value().strip()) < 8:
             raise ValueError("Password must be at least 8 characters long")
         return v
+
+
+class UserCreateSchema(BaseModel):
+    email: EmailStr
+    hashed_password: str
 
 
 class User(BaseModel):
