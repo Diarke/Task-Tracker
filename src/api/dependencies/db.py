@@ -21,7 +21,7 @@ class DBManager:
         await self.session.close()
 
     async def commit(self):
-        return self.session.commit()
+        await self.session.commit()
 
 
 async def get_db():
