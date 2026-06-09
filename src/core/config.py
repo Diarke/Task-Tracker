@@ -39,6 +39,7 @@ class JWTSettings(ModelConfig):
     SECRET_KEY: Annotated[str, Field()]
     ALGORITHM: Annotated[str, Field]
     ACCESS_TOKEN_EXPIRE_MINUTES: Annotated[int, Field()]
+    REFRESH_TOKEN_EXPIRE_MINUTES: Annotated[int, Field()]
 
 
 class Settings(ModelConfig):

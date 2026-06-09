@@ -8,11 +8,20 @@ from asyncpg.exceptions import UniqueViolationError
 
 from src.services.base import BaseService
 from src.api.schemas.users import (
-    UserCreateRequest, UserCreateSchema, UserCreateResponse
+    UserCreateRequest,
+    UserCreateSchema,
+    UserCreateResponse,
+    TokenPairSchema,
+    UserDBSchema,
+    UserLoginRequest,
+    UserLoginResponse,
+    UserRefreshTokenRequest,
+    UserRefreshTokenResponse,
 )
 from src.core.config import settings
 from src.exceptions.auth import InvalidTokenException
 from src.exceptions.base import DataAlreadyExistsException
+from src.exceptions.users import InvalidPasswordException, UserNotFoundException
 
 
 class PasswordService:
@@ -26,26 +35,77 @@ class PasswordService:
 
 
 class TokenService:
-    def create_access_token(self, data: dict):
+    def create_token(self, data: dict, expires_delta: timedelta, token_type: str) -> str:
         to_encode = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT.ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, settings.JWT.SECRET_KEY, algorithm=settings.JWT.ALGORITHM)
+        expire = datetime.now(timezone.utc) + expires_delta
+        to_encode["exp"] = expire
+        to_encode["type"] = token_type
+        encoded_jwt = jwt.encode(
+            to_encode, settings.JWT.SECRET_KEY, algorithm=settings.JWT.ALGORITHM
+        )
         return encoded_jwt
 
-    def decode_access_token(self, data: str):
+    def create_access_token(self, data: dict) -> str:
+        return self.create_token(
+            data=data,
+            expires_delta=timedelta(minutes=settings.JWT.ACCESS_TOKEN_EXPIRE_MINUTES),
+            token_type="access",
+        )
+    
+    def create_refresh_token(self, data: dict) -> str:
+        return self.create_token(
+            data=data,
+            expires_delta=timedelta(minutes=settings.JWT.REFRESH_TOKEN_EXPIRE_MINUTES),
+            token_type="refresh"
+        )
+
+    def create_token_pair(self, user_id: int) -> TokenPairSchema:
+        token_data = {"user_id": user_id}
+        return TokenPairSchema(
+            access_token=self.create_access_token(token_data),
+            refresh_token=self.create_refresh_token(token_data)
+        )
+
+    def decode_token(self, data: str, token_type: str) -> dict:
         try:
-            return jwt.decode(
-                data, settings.JWT.SECRET_KEY, algorithm=settings.JWT.ALGORITHM
+            payload = jwt.decode(
+                data, settings.JWT.SECRET_KEY, algorithms=[settings.JWT.ALGORITHM]
             )
+            if payload.get("type") != token_type:
+                raise InvalidTokenException()
+            return payload
         except PyJWTError as e:
             logging.error(e)
             raise InvalidTokenException() from e
+
+    def decode_access_token(self, data: str) -> dict:
+        return self.decode_token(data, token_type="access")
+
+    def decode_refresh_token(self, data: str) -> dict:
+        return self.decode_token(data, token_type="refresh")
 
 
 class UserService(BaseService):
     password_service = PasswordService()
     token_service = TokenService()
+
+    async def create_user_db_schema(self, user) -> UserDBSchema:
+        return UserDBSchema(
+            id=user.id,
+            email=user.email,
+            hashed_password=user.hashed_password,
+            is_admin=user.is_admin,
+            is_active=user.is_active,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+    
+    async def create_auth_response(self, user, response_schema):
+        tokens = self.token_service.create_token_pair(user.id)
+        return response_schema(
+            access_token=tokens.access_token,
+            refresh_token=tokens.refresh_token,
+        )
 
     async def create_user(self, user: UserCreateRequest) -> UserCreateResponse:
         password = user.password.get_secret_value()
@@ -55,7 +115,6 @@ class UserService(BaseService):
         )
         try:
             new_user = await self.db.user.create(validate_data)
-            access_token = self.token_service.create_access_token({"user_id": new_user.id})
 
             await self.db.commit()
 
@@ -64,7 +123,25 @@ class UserService(BaseService):
                 raise DataAlreadyExistsException
             raise
 
-        return UserCreateResponse(
-            access_token=access_token,
-            token_type="bearer",
-        )
+        return await self.create_auth_response(new_user, UserCreateResponse)
+
+    async def login(self, user: UserLoginRequest) -> UserLoginResponse:
+        db_user = await self.db.user.get_by_email(user.email)
+        if not db_user:
+            raise UserNotFoundException()
+        if not self.password_service.verify_password(
+            user.password.get_secret_value(),
+            db_user.hashed_password,
+        ):
+            raise InvalidPasswordException()
+        return await self.create_auth_response(db_user, UserLoginResponse)
+
+
+    async def refresh_token(self, token: UserRefreshTokenRequest) -> UserRefreshTokenResponse:
+        payload = self.token_service.decode_refresh_token(token.refresh_token)
+        user_id = payload.get("user_id")
+        if user_id is None:
+            raise InvalidTokenException()
+        
+        access_token = self.token_service.create_access_token({"user_id": user_id})
+        return UserRefreshTokenResponse(access_token=access_token)

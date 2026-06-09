@@ -10,6 +10,11 @@ from pydantic import (
 )
 
 
+class TokenPairSchema(BaseModel):
+    access_token: str
+    refresh_token: str
+
+
 class UserCreateRequest(BaseModel):
     email: Annotated[EmailStr, Field(description="User email address")]
     password: Annotated[SecretStr, Field(description="User password")]
@@ -27,15 +32,32 @@ class UserCreateSchema(BaseModel):
     hashed_password: str
 
 
-class User(BaseModel):
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: SecretStr
+
+
+class UserLoginResponse(TokenPairSchema):
+    ...
+
+
+class UserDBSchema(BaseModel):
     id: Annotated[int, Field(description="Unique user identifier")]
     email: Annotated[EmailStr, Field(description="User email address")]
     hashed_password: Annotated[str, Field(description="Hashed user password")]
+    is_admin: Annotated[bool, Field()]
+    is_active: Annotated[bool, Field()]
     created_at: Annotated[datetime, Field(description="Timestamp when the user was created")]
     updated_at: Annotated[datetime, Field(description="Timestamp when the user was last updated")]
 
 
-class UserCreateResponse(BaseModel):
-    access_token: str
-    token_type: str
+class UserCreateResponse(TokenPairSchema):
+    ...
 
+
+class UserRefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class UserRefreshTokenResponse(BaseModel):
+    access_token: str
