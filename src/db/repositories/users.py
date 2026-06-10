@@ -13,3 +13,8 @@ class UsersRepository(BaseRepository):
         query = select(self.model).where(self.model.email == email)
         result = await self.session.execute(query)
         return self.mapper.map_to_domain_entity(result.scalars().one_or_none())
+
+    async def get_by_id(self, user_id: int) -> UsersORM | None:
+        query = select(self.model).where(self.model.id == user_id)
+        result = await self.session.execute(query)
+        return self.mapper.map_to_domain_entity(result.scalars().one_or_none())

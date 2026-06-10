@@ -137,11 +137,12 @@ class UserService(BaseService):
         return await self.create_auth_response(db_user, UserLoginResponse)
 
 
-    async def refresh_token(self, token: UserRefreshTokenRequest) -> UserRefreshTokenResponse:
-        payload = self.token_service.decode_refresh_token(token.refresh_token)
+    async def refresh_token(self, refresh_token: str) -> UserRefreshTokenResponse:
+        payload = self.token_service.decode_refresh_token(refresh_token)
         user_id = payload.get("user_id")
         if user_id is None:
             raise InvalidTokenException()
-        
+
         access_token = self.token_service.create_access_token({"user_id": user_id})
-        return UserRefreshTokenResponse(access_token=access_token)
+        new_refresh_token = self.token_service.create_refresh_token({"user_id": user_id})
+        return UserRefreshTokenResponse(access_token=access_token, refresh_token=new_refresh_token)
