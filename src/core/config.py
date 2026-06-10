@@ -1,7 +1,7 @@
 from functools import cached_property, lru_cache
 
 from typing import Annotated, Literal
-from pydantic import Field
+from pydantic import Field, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -42,12 +42,19 @@ class JWTSettings(ModelConfig):
     REFRESH_TOKEN_EXPIRE_MINUTES: Annotated[int, Field()]
 
 
+class CookieSettings(BaseModel):
+    SECURE: bool = False
+    SAMESITE: Literal["lax", "strict", "none"] = "lax"
+
+
 class Settings(ModelConfig):
     MODE: Literal["local", "dev", "prod", "test"] = "local"
 
     APP: AppSettings = AppSettings()
     POSTGRES: PostgresSettings = PostgresSettings()
     JWT: JWTSettings = JWTSettings()
+
+    COOKIE: CookieSettings = CookieSettings()
 
 
 @lru_cache
