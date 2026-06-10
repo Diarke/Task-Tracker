@@ -51,6 +51,14 @@ class UserDBSchema(BaseModel):
     updated_at: Annotated[datetime, Field(description="Timestamp when the user was last updated")]
 
 
+class UserResponseSchema(BaseModel):
+    id: Annotated[int, Field(description="Unique user identifier")]
+    email: Annotated[EmailStr, Field(description="User email address")]
+    is_active: Annotated[bool, Field()]
+    created_at: Annotated[datetime, Field(description="Timestamp when the user was created")]
+    updated_at: Annotated[datetime, Field(description="Timestamp when the user was last updated")]
+
+
 class UserCreateResponse(TokenPairSchema):
     ...
 
@@ -61,3 +69,4 @@ class UserRefreshTokenRequest(BaseModel):
 
 class UserRefreshTokenResponse(BaseModel):
     access_token: str
+    refresh_token: str
